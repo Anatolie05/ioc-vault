@@ -28,8 +28,6 @@ steps:
       - --region=europe-west1
       - --platform=managed
       - --allow-unauthenticated
-      - --port=3001
-      - --port=3001
       - --set-env-vars=DATABASE_URL=$_DATABASE_URL
     waitFor: [push-backend]
 
