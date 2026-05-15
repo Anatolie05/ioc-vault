@@ -29,7 +29,7 @@ steps:
       - --platform=managed
       - --allow-unauthenticated
       - --port=3001
-      - --set-env-vars=DATABASE_URL=$_DATABASE_URL,PORT=3001
+      - --set-env-vars=DATABASE_URL=$_DATABASE_URL
     waitFor: [push-backend]
 
   # 4. Get backend URL and save to workspace
