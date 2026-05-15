@@ -4,6 +4,7 @@ steps:
     id: build-backend
     args:
       - build
+      - --no-cache
       - -t
       - europe-west1-docker.pkg.dev/project-5313e0ae-d788-44ac-9cd/ioc-vault/backend:$COMMIT_SHA
       - ./backend
@@ -53,6 +54,7 @@ steps:
       - |
         BACKEND_URL=$(cat /workspace/backend_url.txt)
         docker build \
+          --no-cache \
           --build-arg NEXT_PUBLIC_API_URL=$$BACKEND_URL \
           -t europe-west1-docker.pkg.dev/project-5313e0ae-d788-44ac-9cd/ioc-vault/frontend:$COMMIT_SHA \
           ./frontend
