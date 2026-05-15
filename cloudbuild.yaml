@@ -81,6 +81,7 @@ steps:
       - --platform=managed
       - --allow-unauthenticated
       - --port=3000
+      - --set-env-vars=NEXT_PUBLIC_API_URL=https://ioc-vault-backend-842981605206.europe-west1.run.app
     waitFor: [push-frontend]
 
 substitutions:
