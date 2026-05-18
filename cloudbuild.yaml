@@ -4,7 +4,6 @@ steps:
     id: build-backend
     args:
       - build
-      - --no-cache
       - -t
       - europe-west1-docker.pkg.dev/project-5313e0ae-d788-44ac-9cd/ioc-vault/backend:$COMMIT_SHA
       - ./backend
@@ -15,9 +14,8 @@ steps:
     args:
       - push
       - europe-west1-docker.pkg.dev/project-5313e0ae-d788-44ac-9cd/ioc-vault/backend:$COMMIT_SHA
-    waitFor: [build-backend]
 
-  # 3. Deploy backend to Cloud Run
+  # 3. Deploy backend to Cloud Run (port 8080 default, no --port flag)
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk
     id: deploy-backend
     entrypoint: gcloud
@@ -29,46 +27,27 @@ steps:
       - --region=europe-west1
       - --platform=managed
       - --allow-unauthenticated
-      - --set-env-vars=DATABASE_URL=$_DATABASE_URL
-    waitFor: [push-backend]
+      - --set-env-vars=DATABASE_URL=postgresql://postgres:h%23um%2C6MW7Q-X_Y8@db.kdjqrznvswvverqzxdyx.supabase.co:5432/postgres
 
-  # 4. Get backend URL and save to workspace
-  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
-    id: get-backend-url
-    entrypoint: bash
-    args:
-      - -c
-      - |
-        gcloud run services describe ioc-vault-backend \
-          --region=europe-west1 \
-          --format='value(status.url)' > /workspace/backend_url.txt
-        echo "Backend URL: $(cat /workspace/backend_url.txt)"
-    waitFor: [deploy-backend]
-
-  # 5. Build frontend with backend URL baked in
+  # 4. Build frontend image with backend URL baked in
   - name: gcr.io/cloud-builders/docker
     id: build-frontend
-    entrypoint: bash
     args:
-      - -c
-      - |
-        BACKEND_URL=$(cat /workspace/backend_url.txt)
-        docker build \
-          --no-cache \
-          --build-arg NEXT_PUBLIC_API_URL=$$BACKEND_URL \
-          -t europe-west1-docker.pkg.dev/project-5313e0ae-d788-44ac-9cd/ioc-vault/frontend:$COMMIT_SHA \
-          ./frontend
-    waitFor: [get-backend-url]
+      - build
+      - --build-arg
+      - NEXT_PUBLIC_API_URL=https://ioc-vault-backend-842981605206.europe-west1.run.app
+      - -t
+      - europe-west1-docker.pkg.dev/project-5313e0ae-d788-44ac-9cd/ioc-vault/frontend:$COMMIT_SHA
+      - ./frontend
 
-  # 6. Push frontend image
+  # 5. Push frontend image
   - name: gcr.io/cloud-builders/docker
     id: push-frontend
     args:
       - push
       - europe-west1-docker.pkg.dev/project-5313e0ae-d788-44ac-9cd/ioc-vault/frontend:$COMMIT_SHA
-    waitFor: [build-frontend]
 
-  # 7. Deploy frontend to Cloud Run
+  # 6. Deploy frontend to Cloud Run
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk
     id: deploy-frontend
     entrypoint: gcloud
@@ -82,10 +61,6 @@ steps:
       - --allow-unauthenticated
       - --port=3000
       - --set-env-vars=NEXT_PUBLIC_API_URL=https://ioc-vault-backend-842981605206.europe-west1.run.app
-    waitFor: [push-frontend]
-
-substitutions:
-  _DATABASE_URL: postgresql://postgres:postgres@YOUR_DB_HOST:5432/ioc_vault
 
 options:
   logging: CLOUD_LOGGING_ONLY
